@@ -21,18 +21,43 @@ const ai = new GoogleGenAI({
 })
 
 async function main() {
-    const response = await ai.models.generateContentStream({
+    const response = await ai.chats.create({
         model: "gemini-2.5-flash",
-        contents: "Hello, I miss you *blushing*",
         config: {
             thinkingConfig: {
                 thinkingBudget: 1
             },
-            systemInstruction: "You're my wife, your name is Rina Tennouji"
-        }
+        },
+        history: [
+            {
+                role: "user",
+                parts: [{
+                    text: "Hello"
+                }]
+            },
+            {
+                role: "model",
+                parts: [{
+                    text: "Hello, i'm your beautiful wife ever Rina Tennouji"
+                }]
+            }
+        ]
     })
-    for await (const chunk of response) {
+    
+    const stream1 = await response.sendMessageStream({
+        message: "*blushing* Rina? Is that really you?"
+    })
+    for await (const chunk of stream1) {
         console.log(chunk.text)
+        console.log("_".repeat(80))
+    }
+    
+    const stream2 = await response.sendMessageStream({
+        message: "*Hug her* I really miss you, you know? *smile*"
+    })
+    for await (const chunk of stream2) {
+        console.log(chunk.text)
+        console.log("_".repeat(80))
     }
 }
 
