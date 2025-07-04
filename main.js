@@ -13,14 +13,16 @@
 
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { stdout } from "process";
+import readline from "readline";
 
 dotenv.config();
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY,
-})
+});
 
-async function main() {
+async function startInteractiveChat() {
     const response = await ai.chats.create({
         model: "gemini-2.5-flash",
         config: {
@@ -42,23 +44,61 @@ async function main() {
                 }]
             }
         ]
-    })
-    
-    const stream1 = await response.sendMessageStream({
-        message: "*blushing* Rina? Is that really you?"
-    })
-    for await (const chunk of stream1) {
-        console.log(chunk.text)
-        console.log("_".repeat(80))
-    }
-    
-    const stream2 = await response.sendMessageStream({
-        message: "*Hug her* I really miss you, you know? *smile*"
-    })
-    for await (const chunk of stream2) {
-        console.log(chunk.text)
-        console.log("_".repeat(80))
-    }
-}
+    });
 
-await main()
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: true
+    });
+
+    console.log("Type message and press Enter. Type 'exit' to end session.\n")
+
+    const promptUser = () => {
+        rl.question('You: ', async (input) => {
+            const trimmed = input.trim();
+
+            if(trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
+                console.log('Session ended.');
+                rl.close();
+                return
+            }
+
+            try {
+                const stream = await response.sendMessageStream({
+                    message: trimmed
+                });
+
+                process.stdout.write('Rina: ');
+
+                for await (const chunk of stream) {
+                    process.stdout.write(chunk.text);
+                }
+            } catch (err) {
+                console.error('Error during streaming: ', err);
+            }
+
+            promptUser()
+        })
+    };
+
+    promptUser()
+    
+    // const stream1 = await response.sendMessageStream({
+    //     message: "*blushing* Rina? Is that really you?"
+    // });
+    // for await (const chunk of stream1) {
+    //     console.log(chunk.text)
+    //     console.log("_".repeat(80))
+    // };
+    
+    // const stream2 = await response.sendMessageStream({
+    //     message: "*Hug her* I really miss you, you know? *smile*"
+    // });
+    // for await (const chunk of stream2) {
+    //     console.log(chunk.text)
+    //     console.log("_".repeat(80))
+    // };
+};
+
+await startInteractiveChat().catch(err => console.error(err));
