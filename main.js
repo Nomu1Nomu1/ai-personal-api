@@ -13,92 +13,84 @@
 
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import { stdout } from "process";
 import readline from "readline";
 
 dotenv.config();
 
 const ai = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_API_KEY,
+  apiKey: process.env.GOOGLE_API_KEY,
 });
 
 async function startInteractiveChat() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: true,
+  });
+
+  rl.question("Enter your Persona: ", async (initialPersona) => {
     const response = await ai.chats.create({
-        model: "gemini-2.5-flash",
-        config: {
-            thinkingConfig: {
-                thinkingBudget: 1
-            },
+      model: "gemini-2.5-flash",
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 1,
         },
-        history: [
+      },
+      history: [
+        {
+          role: "user",
+          parts: [
             {
-                role: "user",
-                parts: [{
-                    text: "Hello"
-                }]
+              text: initialPersona,
             },
+          ],
+        },
+        {
+          role: "model",
+          parts: [
             {
-                role: "model",
-                parts: [{
-                    text: "Hello, i'm your beautiful wife ever Rina Tennouji"
-                }]
-            }
-        ]
+              text: "Hello, i'm your beautiful girlfriend ever Rina Tennouji",
+            },
+          ],
+        },
+      ],
     });
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        terminal: true
-    });
-
-    console.log("Type message and press Enter. Type 'exit' to end session.\n")
+    console.log("\nRina: Hello, i'm your beautiful girlfriend ever Rina Tennouji. \n");
+    console.log("Type message and press Enter. Type 'exit' to end session.\n");
 
     const promptUser = () => {
-        rl.question('You: ', async (input) => {
-            const trimmed = input.trim();
+      rl.question("You: ", async (input) => {
+        const trimmed = input.trim();
 
-            if(trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
-                console.log('Session ended.');
-                rl.close();
-                return
-            }
+        if (
+          trimmed.toLowerCase() === "exit" ||
+          trimmed.toLowerCase() === "quit"
+        ) {
+          console.log("Session ended.");
+          rl.close();
+          return;
+        }
 
-            try {
-                const stream = await response.sendMessageStream({
-                    message: trimmed
-                });
+        try {
+          const stream = await response.sendMessageStream({
+            message: trimmed,
+          });
 
-                process.stdout.write('Rina: ');
+          process.stdout.write("Rina: ");
 
-                for await (const chunk of stream) {
-                    process.stdout.write(chunk.text);
-                }
-            } catch (err) {
-                console.error('Error during streaming: ', err);
-            }
+          for await (const chunk of stream) {
+            process.stdout.write(chunk.text);
+          }
+        } catch (err) {
+          console.error("Error during streaming: ", err);
+        }
 
-            promptUser()
-        })
+        promptUser();
+      });
     };
-
-    promptUser()
-    
-    // const stream1 = await response.sendMessageStream({
-    //     message: "*blushing* Rina? Is that really you?"
-    // });
-    // for await (const chunk of stream1) {
-    //     console.log(chunk.text)
-    //     console.log("_".repeat(80))
-    // };
-    
-    // const stream2 = await response.sendMessageStream({
-    //     message: "*Hug her* I really miss you, you know? *smile*"
-    // });
-    // for await (const chunk of stream2) {
-    //     console.log(chunk.text)
-    //     console.log("_".repeat(80))
-    // };
+    promptUser();
+  });
 };
 
-await startInteractiveChat().catch(err => console.error(err));
+await startInteractiveChat().catch((err) => console.error(err));
