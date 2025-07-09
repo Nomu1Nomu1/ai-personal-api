@@ -1,4 +1,4 @@
-import e, { text } from 'express';
+import e from 'express';
 import dotenv from 'dotenv';
 import router from './routes/web.js';
 

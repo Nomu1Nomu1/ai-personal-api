@@ -10,7 +10,7 @@ const ai = new GoogleGenAI({
 export const chatMessage = async (req, res) => {
   const { persona, message } = req.body;
 
-  if (!persona || typeof persona !== "string" || typeof message !== "string") {
+  if (!persona || !message) {
     return res
       .status(400)
       .json({ error: "Missing 'persona' or 'message' in request body" });
