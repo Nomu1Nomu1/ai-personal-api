@@ -10,6 +10,9 @@ const ai = new GoogleGenAI({
 
 const sessions = {};
 
+const modelName = "Rina Tennouji";
+const modelPersona = `Hello, I'm your beautiful girlfriend ever ${modelName}. `
+
 export const newPersona = async (req, res) => {
   const { persona } = req.body;
 
@@ -28,7 +31,7 @@ export const newPersona = async (req, res) => {
       {
         role: "model",
         parts: [
-          { text: "Hello, I'm your beautiful girlfriend ever Rina Tennouji." },
+          { text: modelPersona },
         ],
       },
     ],
