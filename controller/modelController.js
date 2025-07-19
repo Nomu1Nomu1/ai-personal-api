@@ -1,44 +1,55 @@
-import { v4 as uuidv4 } from "uuid";
 import { ModelPersona } from "../models/modelPersona.js";
-
-const sessions = {}
+import { userPersona } from "../models/userPersona.js";
 
 export const createPersona = async (req, res) => {
-    const { name, gender, persona } = req.body;
+  const { name, gender, persona } = req.body;
 
-    if (!name || !gender || !persona) {
-        return res.status(400).json({ error: "Missing name, gender, or persona" });
+  if (!name || !gender || !persona) {
+    return res.status(400).json({ error: "Missing name, gender, or persona" });
+  }
+
+  try {
+    const existing = await ModelPersona.findOne({ where: { persona } });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ error: "Model with this persona already exists" });
     }
 
-    try {
-        const newModel = await ModelPersona.create({ name, gender, persona });
+    const newModel = await ModelPersona.create({ name, gender, persona });
 
-        const sessionId = uuidv4();
-        const modelPersona = `Hello, i'm your ${gender === "female" ? "beautiful" : "handsome"} comapanion ${name}. ${persona}`;
+    const modelPersona = `Hello, i'm your ${
+      gender === "female" ? "beautiful" : "handsome"
+    } comapanion ${name}. ${persona}`;
 
-        const sessionData = {
-            history: [
-                {
-                    role:  "user",
-                    parts: [{ text: persona }]
-                },
-                {
-                    role: "model",
-                    parts: [{ text: modelPersona }]
-                }
-            ]
-        }
+    res.status(201).json({
+      success: true,
+      initialMessage: modelPersona,
+      savedModel: newModel,
+    });
+  } catch (err) {
+    console.error("Error creating model persona:", err);
+    res.status(500).json({ error: "Failed to create model persona" });
+  }
+};
 
-        sessions[sessionId] = sessionData;
+export const createUserPersona = async (req, res) => {
+  const { username, persona } = req.body;
 
-        res.status(201).json({
-            success: true,
-            sessionId,
-            initialMessage: modelPersona,
-            savedModel: newModel
-        })
-    } catch (err) {
-        console.error("Error creating model persona:", err);
-        res.status(500).json({ error: "Failed to create model persona" });
-    }
-}
+  if (!username || !persona) {
+    return res.status(400).json({ error: "Missing username or persona" });
+  }
+
+  try {
+    const newUser = await userPersona.create({ username, persona });
+
+    res.status(201).json({
+      success: true,
+      message: "User persona created successfully",
+      userPersona: newUser,
+    });
+  } catch (err) {
+    console.error("Error creating user persona:", err);
+    res.status(500).json({ error: "Failed to create user persona" });
+  }
+};

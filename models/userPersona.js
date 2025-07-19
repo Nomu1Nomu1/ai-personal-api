@@ -1,25 +1,21 @@
 import { DataTypes } from "sequelize";
 import db from "../config/db.js";
 
-export const ModelPersona = db.define("model_personas", {
+export const userPersona = db.define("user_personas", {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
-    name: {
+    username: {
         type: DataTypes.STRING,
         allowNull: false,
-    },
-    gender: {
-        type: DataTypes.STRING,
-        allowNull: true,
     },
     persona: {
         type: DataTypes.TEXT,
         allowNull: false,
-    },
+    }
 }, {
-    tableName: "model_personas",
+    tableName: "user_personas",
     timestamps: true,
 });
