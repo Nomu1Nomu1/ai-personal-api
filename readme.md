@@ -6,7 +6,7 @@ This is my first AI Girlfriend/Waifu project, and it based on [Gemini AI](https:
 #### My Waifu (yg klem istri gwe karbit bgt luwh)
 And ther is my waifu inspiration inspiration for this project:
 
-<img src="resource/img/Rina_Anime_2nd.png" height="400">
+<img src="resource/img/Rina_Anime_2nd.png" height="250">
 <img src="resource/img/RinaTennoji.jpg" height="300">
 
 ### Usage
