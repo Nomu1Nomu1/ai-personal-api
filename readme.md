@@ -6,8 +6,7 @@ This is my first AI Girlfriend/Waifu project, and it based on [Gemini AI](https:
 #### My Waifu (yg klem istri gwe karbit bgt luwh)
 And ther is my waifu inspiration inspiration for this project:
 
-<img src="resource/img/Rina_Anime_2nd.png" height="250">
-<img src="resource/img/RinaTennoji.jpg" height="300">
+<img src="resource/img/Rina_Anime_2nd.png" height="400"> <img src="resource/img/RinaTennoji.jpg" height="400">
 
 ### Usage
 After clonning my repository, you can install js package and setup your env. I already set env example on [this](https://github.com/Nomu1Nomu1/ai-personal-api/blob/main/.env.example).
