@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
+import { userPersona } from "../models/userPersona.js";
+import { ModelPersona } from "../models/modelPersona.js";
 
 dotenv.config();
 
@@ -8,81 +9,62 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GOOGLE_API_KEY,
 });
 
-const sessions = {};
+export const messageAi = async (req, res) => {
+  const { username, modelId, message } = req.body;
 
-const modelName = "Rina Tennouji";
-const modelPersona = `Hello, I'm your beautiful girlfriend ever ${modelName}. `
-
-export const newPersona = async (req, res) => {
-  const { persona } = req.body;
-
-  if (!persona) {
-    return res.status(400).json({ error: "Missing 'persona'" });
+  if (!username || !modelId || !message) {
+    return res
+      .status(400)
+      .json({ error: "Missing username, modelId, or message" });
   }
 
-  const sessionId = uuidv4();
+  try {
+    const user = await userPersona.findOne({ where: { username } });
+    if (!user) {
+      return res.status(404).json({ error: "Username not found" });
+    }
 
-  const sessionData = {
-    history: [
+    const model = await ModelPersona.findOne({ where: { id: modelId } });
+    if (!model) {
+      return res.status(404).json({ error: "Model persona not found" });
+    }
+
+    const modelIntro = `Hello, i'm your ${
+      model.gender === "female" ? "beautiful" : "handsome"
+    } comapanion ${model.name}. ${model.persona}`;
+
+    const history = [
       {
         role: "user",
-        parts: [{ text: persona }],
+        parts: [{ text: `${user.persona}` }],
       },
       {
         role: "model",
-        parts: [
-          { text: modelPersona },
-        ],
+        parts: [{ text: modelIntro }],
       },
-    ],
-  };
+    ];
 
-  sessions[sessionId] = sessionData;
-
-  res.json({ sessionId, initialMessage: sessionData.history[1].parts[0].text });
-};
-
-export const chatMessage = async (req, res) => {
-  const { sessionId, message } = req.body;
-
-  if (!sessionId || !message) {
-    return res.status(400).json({ error: "Missing 'sessionI' or 'message'" });
-  }
-
-  const session = sessions[sessionId];
-  if (!session) {
-    return res.status(404).json({ error: "Session not found" });
-  }
-
-  session.history.push({
-    role: "user",
-    parts: [{ text: message }],
-  });
-  
-  try {
     const response = await ai.chats.create({
       model: "gemini-2.5-flash",
       config: {
         thinkingConfig: {
-          thinkingBudget: 1
-        }
+          thinkingBudget: 1,
+        },
       },
-      history: session.history,
+      history: history,
     });
 
-    const response1 = await response.sendMessage({
+    const aiResponse = await response.sendMessage({
       message: message,
     });
 
-    session.history.push({
-      role: "model",
-      parts: [{ text: response1.text }],
+    return res.status(200).json({
+      success: true,
+      modelName: model.name,
+      response: aiResponse.text,
     });
-
-    res.status(200).json({ response: response1.text });
   } catch (error) {
     console.error("Error from AI:", error);
-    res.status(500).json({ error: "Failed to get AI response" });
+    return res.status(500).json({ error: "Failed to get AI response" });
   }
-  
-}
+};
