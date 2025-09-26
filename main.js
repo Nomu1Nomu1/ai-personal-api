@@ -7,11 +7,12 @@ dotenv.config();
 
 const app = e();
 const port = process.env.PORT;
+const host = process.env.CORS_HOST;
 
 app.use(e.json());
 app.use(
   cors({
-    origin: `http://localhost:3000`,
+    origin: `${host}`,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"],
   })
