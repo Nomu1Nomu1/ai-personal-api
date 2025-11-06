@@ -7,7 +7,7 @@ export const ChatLog = db.define("chat_log", {
         autoIncrement: true,
         primaryKey: true,
     },
-    username: {
+    usernameId: {
         type: DataTypes.INTEGER,
     },
     modelId: {
