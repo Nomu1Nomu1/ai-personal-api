@@ -1,17 +1,12 @@
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { userPersona } from "../models/userPersona.js";
 import { ModelPersona } from "../models/modelPersona.js";
 import { ChatLog } from "../models/chatLogs.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { text } from "express";
 
 dotenv.config();
 
 const ai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-// const ai = new GoogleGenAI({
-//   apiKey: process.env.GOOGLE_API_KEY,
-// });
 
 export const messageAi = async (req, res) => {
   const { usernameId, modelId, message } = req.body;
@@ -71,27 +66,6 @@ export const messageAi = async (req, res) => {
       },
     ];
 
-    // const response = await ai.chats.create({
-    //   model: "gemini-2.5-flash",
-    //   config: {
-    //     thinkingConfig: {
-    //       thinkingBudget: -1,
-    //     },
-    //   },
-    //   history: history,
-    // });
-
-    // const aiResponse = await response.sendMessage({
-    //   message: message,
-    // });
-    
-    // ChatLog.create({
-    //   usernameId,
-    //   modelId,
-    //   role: "user",
-    //   message,
-    // });
-
     const geminiModel = ai.getGenerativeModel({
       model: "gemini-2.5-flash",
       systemInstruction: modelIntro,
@@ -114,7 +88,7 @@ export const messageAi = async (req, res) => {
       role: "model",
       message: aiResponse,
     });
-    
+
     return res.status(200).json({
       success: true,
       modelName: model.name,
