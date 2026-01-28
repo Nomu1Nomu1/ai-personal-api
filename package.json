@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "@google/genai": "^1.8.0",
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "mysql2": "^3.14.2",
@@ -16,7 +18,9 @@
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main",
+    "dev": "nodemon main"
   },
   "keywords": [],
   "author": "",
