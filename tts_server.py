@@ -35,7 +35,57 @@ def upload_voice():
     
 @app.route('/tts', methods=['POST'])
 def text_to_speech():
-    data = request.json
-    text = data.get('text', '')
-    voice_name = data.get('voice_name', 'default')
-    language = data.get('language', 'en')
+    try:
+        data = request.json
+        text = data.get('text', '')
+        voice_name = data.get('voice_name', 'default')
+        language = data.get('language', 'en')
+    
+        if not text:
+            return jsonify({"error" : "No text provided"}), 400
+    
+        speaker_wav = os.path.join(VOICE_SAMPLES_DIR, f"{voice_name}.wav")
+    
+        if not os.path.exists(speaker_wav):
+            return jsonify({"error" : f"Voice sample '{voice_name}' not found"}), 404
+    
+        timestamp = datetime.now().strftime('Y%m%d_H%M%S')
+        output_filename = f"rina_voice_{timestamp}.wav"
+        output_path = os.path.join(AUDIO_OUTPUT_DIR, output_filename)
+    
+        tts.tts_to_file(
+            text=text,
+            speaker_wav=speaker_wav,
+            language=language,
+            file_path=output_path
+        )
+    
+        return send_file(output_path, mimetype='audio/wav')
+    
+    except Exception as e:
+        return jsonify({"error" : str(e)}), 500
+    
+@app.route('/list-voice', methods=['GET'])
+def list_voice():
+    voices = []
+    if os.path.exists(VOICE_SAMPLES_DIR):
+        voices = [f.replace('.wav', '') for f in os.listdir(VOICE_SAMPLES_DIR) if f.endswith('.wav')]
+        
+    return jsonify({
+        "voices" : voices,
+        "count" : len(voices)
+    })
+    
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status" : "healthy",
+        "model" : "xtts_v2",
+        "device" : device
+    })
+    
+if __name__ == '__main__':
+    print(f"TTS server running on http://localhost:5000")
+    print(f"Voice sample directory: {VOICE_SAMPLES_DIR}")
+    print(f"Audio output directory: {AUDIO_OUTPUT_DIR}")
+    app.run(host='0.0.0.0', port=5000, debug=True)
