@@ -1,4 +1,7 @@
 import dotenv from "dotenv";
+import FormData from "form-data";
+import axios from "axios";
+import path from "path";
 import { userPersona } from "../models/userPersona.js";
 import { ModelPersona } from "../models/modelPersona.js";
 import { ChatLog } from "../models/chatLogs.js";
@@ -7,6 +10,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 dotenv.config();
 
 const ai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+
+const TTS_SERVER_URL = process.env.TTS_SERVER_URL
 
 export const messageAi = async (req, res) => {
   const { usernameId, modelId, message } = req.body;
@@ -81,6 +86,32 @@ export const messageAi = async (req, res) => {
 
     const result = await chat.sendMessage(message)
     const aiResponse = result.response.text()
+
+    if(enableVoice) {
+      try {
+        const ttsResponse = await axios.post(
+          `${TTS_SERVER_URL}/tts`,
+          {
+            text: aiResponse.text,
+            voice_name: "Rina",
+            language: "en"
+          },
+          {
+            responseType: "arraybuffer"
+          }
+        )
+
+        const timestamp = Date.now()
+        const audioFileName = `rina_voice_${timestamp}.wav`
+
+        result.audioData = Buffer.from(ttsResponse.data).toString('base64')
+        result.audioUrl = `/audio/${audioFileName}`
+        result.mimetype = "audio/wav"
+      } catch (voiceError) {
+        console.error("Voice generation error: ", voiceError)
+        result.voiceError = "Failed to generate voice"
+      }
+    }
 
     await ChatLog.create({
       usernameId,
