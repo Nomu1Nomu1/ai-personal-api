@@ -19,7 +19,7 @@ export const messageAi = async (req, res) => {
   if (!usernameId || !modelId || !message) {
     return res
       .status(400)
-      .json({ error: "Missing usernameId, modelId, or message" });
+      .json({ error: "Missing usernameId, modelId, or message" })
   }
 
   let transaction;
@@ -27,10 +27,10 @@ export const messageAi = async (req, res) => {
   try {
     const user = await userPersona.findOne({ where: { id: usernameId } });
     if (!user) {
-      return res.status(404).json({ error: "usernameId not found" });
+      return res.status(404).json({ error: "usernameId not found" })
     }
 
-    const model = await ModelPersona.findOne({ where: { id: modelId } });
+    const model = await ModelPersona.findOne({ where: { id: modelId } })
     if (!model) {
       return res.status(404).json({ error: "Model persona not found" });
     }
