@@ -11,7 +11,7 @@ dotenv.config();
 
 const ai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-const TTS_SERVER_URL = process.env.TTS_SERVER_URL
+const TTS_SERVER_URL = process.env.TTS_SERVER_URL;
 
 export const messageAi = async (req, res) => {
   const { usernameId, modelId, message } = req.body;
@@ -19,7 +19,7 @@ export const messageAi = async (req, res) => {
   if (!usernameId || !modelId || !message) {
     return res
       .status(400)
-      .json({ error: "Missing usernameId, modelId, or message" })
+      .json({ error: "Missing usernameId, modelId, or message" });
   }
 
   let transaction;
@@ -27,10 +27,10 @@ export const messageAi = async (req, res) => {
   try {
     const user = await userPersona.findOne({ where: { id: usernameId } });
     if (!user) {
-      return res.status(404).json({ error: "usernameId not found" })
+      return res.status(404).json({ error: "usernameId not found" });
     }
 
-    const model = await ModelPersona.findOne({ where: { id: modelId } })
+    const model = await ModelPersona.findOne({ where: { id: modelId } });
     if (!model) {
       return res.status(404).json({ error: "Model persona not found" });
     }
@@ -80,36 +80,36 @@ export const messageAi = async (req, res) => {
       history: history.slice(0, -1),
       generationConfig: {
         maxOutputTokens: 1024,
-        temperature: 0.7
-      }
-    })
+        temperature: 0.7,
+      },
+    });
 
-    const result = await chat.sendMessage(message)
-    const aiResponse = result.response.text()
+    const result = await chat.sendMessage(message);
+    const aiResponse = result.response.text();
 
-    if(enableVoice) {
+    if (enableVoice) {
       try {
         const ttsResponse = await axios.post(
           `${TTS_SERVER_URL}/tts`,
           {
             text: aiResponse.text,
             voice_name: "Rina",
-            language: "en"
+            language: "en",
           },
           {
-            responseType: "arraybuffer"
+            responseType: "arraybuffer",
           }
-        )
+        );
 
-        const timestamp = Date.now()
-        const audioFileName = `rina_voice_${timestamp}.wav`
+        const timestamp = Date.now();
+        const audioFileName = `rina_voice_${timestamp}.wav`;
 
-        result.audioData = Buffer.from(ttsResponse.data).toString('base64')
-        result.audioUrl = `/audio/${audioFileName}`
-        result.mimetype = "audio/wav"
+        result.audioData = Buffer.from(ttsResponse.data).toString("base64");
+        result.audioUrl = `/audio/${audioFileName}`;
+        result.mimetype = "audio/wav";
       } catch (voiceError) {
-        console.error("Voice generation error: ", voiceError)
-        result.voiceError = "Failed to generate voice"
+        console.error("Voice generation error: ", voiceError);
+        result.voiceError = "Failed to generate voice";
       }
     }
 
