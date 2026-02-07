@@ -14,20 +14,20 @@ const ai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const TTS_SERVER_URL = process.env.TTS_SERVER_URL;
 
 export const messageAi = async (req, res) => {
-  const { usernameId, modelId, message } = req.body;
+  const { userId, modelId, message } = req.body;
 
-  if (!usernameId || !modelId || !message) {
+  if (!userId || !modelId || !message) {
     return res
       .status(400)
-      .json({ error: "Missing usernameId, modelId, or message" });
+      .json({ error: "Missing userId, modelId, or message" });
   }
 
   let transaction;
 
   try {
-    const user = await userPersona.findOne({ where: { id: usernameId } });
+    const user = await userPersona.findOne({ where: { id: userId } });
     if (!user) {
-      return res.status(404).json({ error: "usernameId not found" });
+      return res.status(404).json({ error: "userId not found" });
     }
 
     const model = await ModelPersona.findOne({ where: { id: modelId } });
@@ -40,7 +40,7 @@ export const messageAi = async (req, res) => {
     } companion. Your personality: ${model.persona}. Always stay in character.`;
 
     const pastLogs = await ChatLog.findAll({
-      where: { usernameId, modelId },
+      where: { userId, modelId },
       order: [["createdAt", "ASC"]],
     });
 
@@ -114,7 +114,7 @@ export const messageAi = async (req, res) => {
     }
 
     await ChatLog.create({
-      usernameId,
+      userId,
       modelId,
       role: "model",
       message: aiResponse,
