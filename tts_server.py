@@ -39,7 +39,7 @@ def text_to_speech():
         data = request.json
         text = data.get('text', '')
         voice_name = data.get('voice_name', 'default')
-        language = data.get('language', 'en')
+        language = data.get('language', 'ja')
     
         if not text:
             return jsonify({"error" : "No text provided"}), 400

@@ -37,10 +37,10 @@ export const uploadVoiceSample = async (req, res) => {
 
 export const listVoices = async (req, res) => {
   try {
-    const response = await axios.get(`${TTS_SERVER_URL}/list-voices`);
+    const response = await axios.get(`${TTS_SERVER_URL}/list-voice`);
     return res.status(200).json(response.data);
   } catch (error) {
-    console.error("Error listing voices: ", error);
+    console.error("Error listing voice: ", error);
     return res.status(500).json({ error: "Failed to list voices" });
   }
 };
