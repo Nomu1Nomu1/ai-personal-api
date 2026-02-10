@@ -1,13 +1,19 @@
 from flask import Flask, request, send_file, jsonify
+from datetime import datetime
+from pathlib import Path
 from TTS.api import TTS
 import torch
 import os
 import io
-from datetime import datetime
+import numpy as np
+import soundfile as sf
+import librosa
 
 app = Flask(__name__)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"using device: {device}")
+
 tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 
 VOICE_SAMPLES_DIR = "voice_samples"
@@ -15,6 +21,33 @@ AUDIO_OUTPUT_DIR = "public/audio"
 
 os.makedirs(VOICE_SAMPLES_DIR, exist_ok=True)
 os.makedirs(AUDIO_OUTPUT_DIR, exist_ok=True)
+
+def preprocess_audio(input_path: str, output_path: str, target_sr: int=24000) -> dict:
+    audio, sr = librosa.load(input_path, sr=None, mono=True)
+    
+    original_duration = len(audio)/sr
+    
+    audio, _ = librosa.effects.trim(audio, top_db=25)
+    
+    if sr != target_sr:
+        audio = librosa.resample(audio, orig_sr=sr, target_sr=target_sr)
+        sr = target_sr
+        
+    rms = np.sqrt(np.mean(audio ** 2))
+    if rms > 0:
+        target_rms = 10 ** (-20 / 20)
+        audio = audio * (target_rms / rms)
+        
+    audio = np.clip(audio, -0.99, 0.99)
+    
+    duration = len(audio) / sr
+    sf.write(output_path, audio, sr)
+    
+    return {
+        "original_duration": round(original_duration, 2),
+        "processed_duration": round(duration, 2),
+        "sample_rate": sr
+    }
 
 @app.route('/upload-voice', methods = ['POST'])
 def upload_voice():
