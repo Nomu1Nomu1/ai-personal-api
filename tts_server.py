@@ -49,21 +49,102 @@ def preprocess_audio(input_path: str, output_path: str, target_sr: int=24000) ->
         "sample_rate": sr
     }
 
+def merge_voice_samples(voice_name: str, target_sr: int = 24000) -> str | None:
+    voice_dir = os.path.join(VOICE_SAMPLES_DIR, voice_name)
+    single_path = os.path.join(VOICE_SAMPLES_DIR, f"{voice_name}.wav")
+    
+    if os.path.isdir(voice_dir):
+        wav_files = sorted(Path(voice_dir).glob("*.wav"))
+        
+        if not wav_files:
+            return None
+        
+        combined = []
+        silence = np.zeros(int(target_sr * 0.3))
+        
+        for wav_path in wav_files:
+            audio, sr = librosa.load(str(wav_path), sr= target_sr, mono= True)
+            combined.append(audio)
+            combined.append(silence)
+            
+        merged = np.concatenate(combined)
+        
+        rms = np.sqrt(np.mean(merged ** 2))
+        
+        if rms > 0:
+            target_rms = 10 ** (-20 / 20)
+            merged = merged * (target_rms / rms)
+        merged = np.clip(merged, -0.99, 0.99)
+        
+        merged_path = os.path.join(VOICE_SAMPLES_DIR, f"{voice_name}_merged.wav")
+        sf.write(merged_path, merged, target_sr)
+        return merged_path
+    
+    if os.path.exists(single_path):
+        return single_path
+    
+    return None
+
+def validate_sample(audio_path: str, min_seconds: float = 6.0) -> tuple[bool, str]:
+    try:
+        audio, sr = librosa.load(audio_path, sr=None, mono=True)
+        duration = len(audio) / sr
+        
+        if duration < min_seconds:
+            return False, f"Audio too short ({duration: .1f}s). Needed at least {min_seconds}s"
+        
+        non_silent = librosa.effects.split(audio, top_db=30)
+        if len(non_silent) == 0:
+            return False, "Audio appears to be silent"
+        
+        return True, "OK"
+    except Exception as e:
+        return False, str(e)
+
 @app.route('/upload-voice', methods = ['POST'])
 def upload_voice():
     if 'audio' not in request.files:
         return jsonify({"error" : "No audio file provided"}), 400
     
     audio_file = request.files['audio']
-    voice_name = request.form.get('voice_name', 'default')
     
-    voice_path = os.path.join(VOICE_SAMPLES_DIR, f"{voice_name}.wav")
-    audio_file.save(voice_path)
+    voice_name = request.form.get('voice_name', 'default')
+    sample_index = request.form.get('sample_index')
+    if sample_index is not None:
+        voice_dir = os.path.join(VOICE_SAMPLES_DIR, voice_name)
+        os.makedirs(voice_dir, exist_ok=True)
+        raw_path = os.path.join(voice_dir, f"raw_{sample_index}.wav")
+        processed_path = os.path.join(voice_dir, f"{sample_index.zfill(3)}.wav")
+    else:
+        raw_path = os.path.join(VOICE_SAMPLES_DIR, f"{voice_name}_raw.wav")
+        processed_path = os.path.join(VOICE_SAMPLES_DIR, f"{voice_name}.wav")
+        
+    
+    audio_file.save(raw_path)
+    
+    try:
+        info = preprocess_audio(raw_path, processed_path)
+    except Exception as e:
+        return jsonify({"error": f"Audio processing failed: {str(e)}"}), 500
+    finally:
+        if os.path.exists(raw_path):
+            os.remove(raw_path)
+            
+    valid, reason = validate_sample(processed_path)
+    
+    if not valid:
+        return jsonify({
+            "warning": reason,
+            "success": True,
+            "message": f"Voice sample '{voice_name}' uploaded but quality may be poor.",
+            "info": info,
+        }), 200
     
     return jsonify({
         "success" : True,
         "message" : f"voice sample '{voice_name}', successfully uploaded",
-        "voice_path" : voice_path
+        "voice_path" : processed_path,
+        "info": info
     })
     
 @app.route('/tts', methods=['POST'])
