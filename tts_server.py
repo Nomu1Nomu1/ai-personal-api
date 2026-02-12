@@ -151,27 +151,36 @@ def upload_voice():
 def text_to_speech():
     try:
         data = request.json
-        text = data.get('text', '')
+        text = data.get('text', '').strip()
         voice_name = data.get('voice_name', 'default')
         language = data.get('language', 'ja')
+        
+        temperature = float(data.get('temperature', 0.65))
+        repetition_penalty = float(data.get('repetition_penalty', 2.0))
+        top_k = int(data.get('top_k', 50))
+        top_p = float(data.get('top_p', 0.85))
     
         if not text:
             return jsonify({"error" : "No text provided"}), 400
     
-        speaker_wav = os.path.join(VOICE_SAMPLES_DIR, f"{voice_name}.wav")
+        speaker_wav = merge_voice_samples(voice_name)
+        if speaker_wav is None:
+            return jsonify({ "error": f"Voice sample '{voice_name}' not found" }), 404
     
-        if not os.path.exists(speaker_wav):
-            return jsonify({"error" : f"Voice sample '{voice_name}' not found"}), 404
-    
-        timestamp = datetime.now().strftime('Y%m%d_H%M%S')
-        output_filename = f"rina_voice_{timestamp}.wav"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        output_filename = f"{voice_name}_voice_{timestamp}.wav"
         output_path = os.path.join(AUDIO_OUTPUT_DIR, output_filename)
     
         tts.tts_to_file(
             text=text,
             speaker_wav=speaker_wav,
             language=language,
-            file_path=output_path
+            file_path=output_path,
+            temperature=temperature,
+            repetition_penalty=repetition_penalty,
+            top_k=top_k,
+            top_p=top_p,
+            enable_text_splitting=True
         )
     
         return send_file(output_path, mimetype='audio/wav')
@@ -183,7 +192,14 @@ def text_to_speech():
 def list_voice():
     voices = []
     if os.path.exists(VOICE_SAMPLES_DIR):
-        voices = [f.replace('.wav', '') for f in os.listdir(VOICE_SAMPLES_DIR) if f.endswith('.wav')]
+        for f in os.listdir(VOICE_SAMPLES_DIR):
+            if f.endswith('.wav') and not f.endswith("_merged.wav"):
+                voices.append(f.replace('.wav', ''))
+        
+        for d in os.listdir(VOICE_SAMPLES_DIR):
+            dir_path = os.path.join(VOICE_SAMPLES_DIR, d)
+            if os.path.isdir(dir_path):
+                count = len(list(Path(dir_path).glob('*.wav')))
         
     return jsonify({
         "voices" : voices,
